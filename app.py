@@ -1037,7 +1037,7 @@ from langfuse.callback import CallbackHandler
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-app = Flask(__name__)
+app = Flask(__name__,template_folder='templates')
 CORS(app)
 
 # Global variables for crawler state
