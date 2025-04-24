@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌐 Web Crawler</title>
+    <!-- Bootstrap CSS for responsive and modern styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DOMPurify for sanitizing HTML content -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
+    <!-- Highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <style>
+        :root {
+            --primary-color: #121212; /* Dark text color */
+            --secondary-color: #f8f8f8; /* Light background */
+            --accent-color: #4d4d4d; /* Medium gray for labels */
+            --border-color: #e0e0e0; /* Light border */
+            --hover-color: #000000; /* Hover effects */
+            --card-bg: #ffffff; /* White card background */
+            --btn-primary: #000000; /* Black primary button */
+            --btn-primary-hover: #333333; /* Darker hover for primary button */
+            --btn-secondary: #f0f0f0; /* Light gray secondary button */
+            --btn-danger: #ff4136; /* Red danger button */
+            --btn-info: #555555; /* Gray info button */
+            --btn-success: #2ecc40; /* Green success button */
+        }
+
+        /* General body styling */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            padding: 0;
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        /* Container for content */
+        .container {
+            max-width: 1100px;
+            padding: 40px 20px;
+        }
+
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        /* Card styling for sections */
+        .card {
+            background-color: var(--card-bg);
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-body {
+            padding: 1.75rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            margin-bottom: 1.25rem;
+            color: var(--primary-color);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-title::after {
+            content: '';
+            flex-grow: 1;
+            height: 1px;
+            background-color: var(--border-color);
+            margin-left: 10px;
+        }
+
+        /* Form inputs */
+        .form-control, .form-select {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.1);
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent-color);
+        }
+
+        /* Buttons */
+        .btn {
+            border-radius: 8px;
+            padding: 0.7rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border: none;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background-color: var(--btn-primary);
+            color: white;
+        }
+
+        .btn-primary:hover, .btn-primary:focus {
+            background-color: var(--btn-primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background-color: var(--btn-danger);
+            color: white;
+        }
+
+        .btn-info {
+            background-color: var(--btn-info);
+            color: white;
+        }
+
+        .btn-success {
+            background-color: var(--btn-success);
+            color: white;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Log container */
+        .log-container {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.85rem;
+            background-color: #fafafa;
+        }
+
+        /* Report container */
+        .report-container {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            background-color: white;
+            font-size: 0.95rem;
+            color: var(--primary-color);
+            line-height: 1.8;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .report-container h1,
+        .report-container h2,
+        .report-container h3 {
+            margin-top: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .report-container ul {
+            padding-left: 1.5rem;
+            list-style-type: disc;
+        }
+
+        .report-container p {
+            margin-bottom: 1rem;
+        }
+
+        /* Query history */
+        .query-history {
+            max-height: 300px;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+
+        /* Status indicator */
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background-color: #ccc;
+        }
+
+        .status-idle {
+            background-color: #aaa;
+        }
+
+        .status-running {
+            background-color: #2ecc40;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-error {
+            background-color: #ff4136;
+        }
+
+        .status-completed {
+            background-color: #3d9970;
+        }
+
+        /* Progress bar */
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            background-color: #f0f0f0;
+        }
+
+        .progress-bar {
+            background-color: var(--btn-primary);
+        }
+
+        /* Query items */
+        .query-item {
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+        }
+
+        .query-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .query-timestamp {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 0.5rem;
+        }
+
+        .input-group-text {
+            background-color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+            color: var(--accent-color);
+        }
+
+        /* Pulse animation for running status */
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">🌐 Web Crawler</h1>
+
+        <!-- Crawler Input Form -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">🚀 Start Crawling</h5>
+                <form id="crawler-form">
+                    <div class="mb-3">
+                        <label class="form-label">Crawl Type</label>
+                        <select class="form-select" id="crawl-type" required>
+                            <option value="website">Specific Website(s)</option>
+                            <option value="product">Product Data</option>
+                            <option value="company">Company Data</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="urls-group">
+                        <label class="form-label">URLs (comma-separated)</label>
+                        <input type="text" class="form-control" id="urls" placeholder="https://example.com,https://example.org">
+                    </div>
+                    <div class="mb-3" id="product-group" style="display: none;">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" class="form-control" id="product" placeholder="e.g., Surface Pro">
+                    </div>
+                    <div class="mb-3" id="company-group" style="display: none;">
+                        <label class="form-label">Company Name</label>
+                        <input type="text" class="form-control" id="company" placeholder="e.g., Microsoft">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Max Pages to Crawl</label>
+                        <input type="number" class="form-control" id="max-pages" value="10" min="1" required>
+                    </div>
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary" id="start-btn">Start Crawler</button>
+                        <button type="button" class="btn btn-danger" id="stop-btn" disabled>Stop Crawler</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Crawler Status -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">📊 Crawler Status</h5>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="status-indicator" id="status-indicator"></div>
+                    <strong>Status:</strong> <span id="status" class="ms-2">Idle</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Progress:</strong>
+                    <div class="progress mt-2">
+                        <div class="progress-bar" id="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between small">
+                        <span><strong>Pages Crawled:</strong> <span id="pages-crawled">0</span> / <span id="total-pages">0</span></span>
+                        <span id="progress-percentage">0%</span>
+                    </div>
+                </div>
+                <div>
+                    <strong>Log:</strong>
+                    <div class="log-container mt-2">
+                        <pre id="logs"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Display -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">📄 Crawl Report</h5>
+                <div class="d-flex mb-3">
+                    <button class="btn btn-info me-2" id="refresh-report">Refresh Report</button>
+                    <a class="btn btn-success" id="download-report" style="display: none;">Download Report</a>
+                </div>
+                <div class="report-container" id="report">No report available yet.</div>
+            </div>
+        </div>
+
+        <!-- Query Interface -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">🔍 Query Crawled Data</h5>
+                <form id="query-form">
+                    <div class="mb-3">
+                        <label class="form-label">Enter Query</label>
+                        <input type="text" class="form-control" id="query" placeholder="e.g., What is the latest news about Microsoft?">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Query</button>
+                </form>
+                <div class="mt-4">
+                    <h6 class="fw-bold mb-3">Query Response</h6>
+                    <div id="query-response" class="p-3 border rounded bg-light">No queries submitted yet.</div>
+                </div>
+                <div class="mt-4">
+                    <h6 class="fw-bold mb-3">Query History</h6>
+                    <div class="query-history border rounded p-3 bg-light" id="query-history">No query history available.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Axios for HTTP requests -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        /**
+         * Initializes the Web Crawler frontend functionality when the DOM is loaded.
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM elements
+            const crawlTypeSelect = document.getElementById('crawl-type');
+            const urlsGroup = document.getElementById('urls-group');
+            const productGroup = document.getElementById('product-group');
+            const companyGroup = document.getElementById('company-group');
+            const crawlerForm = document.getElementById('crawler-form');
+            const queryForm = document.getElementById('query-form');
+            const startBtn = document.getElementById('start-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const refreshReportBtn = document.getElementById('refresh-report');
+            const downloadReportLink = document.getElementById('download-report');
+            const statusIndicator = document.getElementById('status-indicator');
+            const progressBar = document.getElementById('progress-bar');
+            const progressPercentage = document.getElementById('progress-percentage');
+            let currentDomain = '';
+            let currentContext = '';
+
+            /**
+             * Formats text by replacing **text** with <strong>text</strong> for bold rendering.
+             * @param {string} text - The text to format.
+             * @returns {string} - The formatted text with bold tags.
+             */
+
+             function formatResponse(response) {
+            return response
+                .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                .replace(/- (.*?)(\n|$)/g, "<li>$1</li>")
+                .replace(/\n\n/g, "</p><p>")
+                .replace(/\n/g, "<br>")
+                .replace("<li>", "<ul><li>").replace("</li>", "</li></ul>");
+        }
+
+
+
+            /**
+             * Toggles input fields based on crawl type selection.
+             */
+            crawlTypeSelect.addEventListener('change', () => {
+                urlsGroup.style.display = crawlTypeSelect.value === 'website' ? 'block' : 'none';
+                productGroup.style.display = crawlTypeSelect.value === 'product' ? 'block' : 'none';
+                companyGroup.style.display = crawlTypeSelect.value === 'company' ? 'block' : 'none';
+            });
+
+            /**
+             * Handles crawler form submission to start crawling.
+             */
+            crawlerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                const crawlType = crawlTypeSelect.value;
+                const maxPages = document.getElementById('max-pages').value;
+                const data = { crawl_type: crawlType, max_pages: maxPages };
+
+                if (crawlType === 'website') {
+                    data.urls = document.getElementById('urls').value;
+                } else if (crawlType === 'product') {
+                    data.product = document.getElementById('product').value;
+                } else if (crawlType === 'company') {
+                    data.company = document.getElementById('company').value;
+                }
+
+                try {
+                    const response = await axios.post('/start_crawler', data);
+                    currentDomain = response.data.status.domain || 'multiple_domains';
+                    currentContext = response.data.status.context || 'website';
+                    showNotification(response.data.message, 'success');
+                    updateStatus();
+                    fetchReport();
+                } catch (error) {
+                    showNotification(`Error starting crawler: ${error.response?.data?.error || error.message}`, 'error');
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                }
+            });
+
+            /**
+             * Stops the crawler when the stop button is clicked.
+             */
+            stopBtn.addEventListener('click', async () => {
+                try {
+                    const response = await axios.post('/stop_crawler');
+                    showNotification(response.data.message, 'info');
+                } catch (error) {
+                    showNotification(`Error stopping crawler: ${error.response?.data?.error || error.message}`, 'error');
+                }
+            });
+
+            /**
+             * Updates crawler status periodically.
+             */
+            async function updateStatus() {
+                try {
+                    const response = await axios.get('/crawler_status');
+                    const status = response.data;
+                    document.getElementById('status').textContent = status.status;
+                    document.getElementById('pages-crawled').textContent = status.pages_crawled;
+                    document.getElementById('total-pages').textContent = status.total_pages;
+                    document.getElementById('logs').textContent = status.logs.join('\n');
+
+                    // Update status indicator
+                    statusIndicator.className = 'status-indicator';
+                    if (status.status === 'running' || status.status === 'starting') {
+                        statusIndicator.classList.add('status-running');
+                    } else if (status.status === 'error') {
+                        statusIndicator.classList.add('status-error');
+                    } else if (status.status === 'completed') {
+                        statusIndicator.classList.add('status-completed');
+                    } else {
+                        statusIndicator.classList.add('status-idle');
+                    }
+
+                    // Update progress bar
+                    const progress = status.total_pages > 0 ? (status.pages_crawled / status.total_pages) * 100 : 0;
+                    progressBar.style.width = `${progress}%`;
+                    progressPercentage.textContent = `${Math.round(progress)}%`;
+
+                    // Update button states
+                    startBtn.disabled = status.status === 'running' || status.status === 'starting';
+                    stopBtn.disabled = status.status !== 'running';
+
+                    // Auto-scroll logs to bottom
+                    const logContainer = document.querySelector('.log-container');
+                    logContainer.scrollTop = logContainer.scrollHeight;
+
+                    // Continue polling unless completed or error
+                    if (status.status !== 'completed' && status.status !== 'error') {
+                        setTimeout(updateStatus, 2000);
+                    }
+                } catch (error) {
+                    console.error('Error fetching status:', error);
+                }
+            }
+
+            /**
+             * Fetches and displays the crawl report.
+             */
+             async function fetchReport() {
+    try {
+        const response = await axios.get(`/get_report?domain=${currentDomain}&context=${currentContext}`);
+        let rawHTML = response.data.report;
+
+        // Step 1: Normalize whitespace but preserve meaningful structure
+        rawHTML = rawHTML
+            .replace(/\t+/g, '')                // Remove tabs
+            .replace(/\n{3,}/g, '\n')         // Limit consecutive newlines to max 1
+            .replace(/\s{2,}/g, ' ')            // Collapse multiple spaces to one
+            .trim();                            // Remove leading/trailing whitespace
+
+        // Step 2: Clean HTML using DOMPurify
+        const cleanHTML = DOMPurify.sanitize(rawHTML);
+
+        // Step 3: Process specific HTML elements to control spacing
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = cleanHTML;
+
+        // Fix heading spacing - add proper margins
+        const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
+        headings.forEach(heading => {
+            heading.style.marginTop = '1.5rem';
+            heading.style.marginBottom = '1rem';
+        });
+
+        // Fix paragraph spacing
+        const paragraphs = tempDiv.querySelectorAll('p');
+        paragraphs.forEach(p => {
+            p.style.marginBottom = '0.75rem';
+        });
+
+        // Fix list spacing
+        const lists = tempDiv.querySelectorAll('ul, ol');
+        lists.forEach(list => {
+            list.style.marginTop = '0.5rem';
+            list.style.marginBottom = '1rem';
+        });
+
+        // Fix list item spacing
+        const listItems = tempDiv.querySelectorAll('li');
+        listItems.forEach(item => {
+            item.style.marginBottom = '0.25rem';
+        });
+
+        // Step 4: Add CSS to control overall spacing in the report container
+        const reportStyles = `
+        <style>
+            #report {
+                line-height: 1.5;
+            }
+            #report > * + * {
+                margin-top: 0.75rem;
+            }
+            #report h1, #report h2, #report h3, #report h4, #report h5, #report h6 {
+                margin-top: 1.5rem;
+                margin-bottom: 1rem;
+            }
+            #report p {
+                margin-bottom: 0.75rem;
+            }
+            #report ul, #report ol {
+                margin-top: 0.5rem;
+                margin-bottom: 1rem;
+                padding-left: 1.5rem;
+            }
+            #report li {
+                margin-bottom: 0.25rem;
+            }
+            #report li:last-child {
+                margin-bottom: 0;
+            }
+            #report img {
+                margin: 1.5rem 0;
+                max-width: 100%;
+            }
+            #report section {
+                margin-bottom: 2rem;
+            }
+            /* Remove excessive margins between sections */
+            #report section + section {
+                margin-top: 1rem;
+            }
+        </style>
+        `;
+
+        // Apply the formatted content and styles
+        document.getElementById('report').innerHTML = reportStyles + tempDiv.innerHTML;
+        
+        // Handle images that might need extra processing
+        const images = document.querySelectorAll('#report img');
+        images.forEach(img => {
+            // Ensure images have proper alt text and are responsive
+            if (!img.alt) img.alt = "Report visualization";
+            img.style.maxWidth = "100%";
+            img.style.height = "auto";
+        });
+
+        // Show download link
+        downloadReportLink.style.display = 'block';
+        downloadReportLink.href = `/download_report?domain=${currentDomain}&context=${currentContext}`;
+    } catch (error) {
+        console.error("Error fetching report:", error);
+        document.getElementById('report').innerHTML = '<div class="alert alert-danger">Error fetching report.</div>';
+    }
+}
+
+// Add event listener
+refreshReportBtn.addEventListener('click', fetchReport);
+            /**
+             * Handles query form submission.
+             */
+            queryForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const query = document.getElementById('query').value;
+                if (!query) {
+                    showNotification('Query cannot be empty.', 'warning');
+                    return;
+                }
+
+                document.getElementById('query-response').innerHTML = `
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border text-dark" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                `;
+
+                try {
+                    const response = await axios.post('/query', { query, domain: currentDomain });
+                    const formattedResponse = formatResponse(response.data.response);
+                    const cleanResponse = DOMPurify.sanitize(formattedResponse);
+                    const cleanQuery = DOMPurify.sanitize(response.data.query);
+                    document.getElementById('query-response').innerHTML = `
+                        <div>
+                            <p class="fw-bold text-dark">Query:</p>
+                            <p>${cleanQuery}</p>
+                            <p class="fw-bold text-dark mt-3">Response:</p>
+                            <p>${cleanResponse}</p>
+                            <p class="query-timestamp">${new Date(response.data.timestamp).toLocaleString()}</p>
+                        </div>
+                    `;
+                    fetchQueryHistory();
+                } catch (error) {
+                    document.getElementById('query-response').innerHTML = `
+                        <div class="alert alert-danger">Error processing query: ${error.response?.data?.error || error.message}</div>
+                    `;
+                }
+            });
+
+            /**
+             * Fetches and displays query history.
+             */
+            async function fetchQueryHistory() {
+                try {
+                    const response = await axios.get(`/query_history?domain=${currentDomain}`);
+                    if (response.data.length === 0) {
+                        document.getElementById('query-history').innerHTML = 'No queries yet.';
+                        return;
+                    }
+
+                    const history = response.data.map(q => {
+                        const formattedResponse = formatResponse(q.response);
+                        const cleanResponse = DOMPurify.sanitize(formattedResponse);
+                        const cleanQuery = DOMPurify.sanitize(q.query);
+                        return `
+                            <div class="query-item">
+                                <p class="fw-bold text-dark">Query:</p>
+                                <p>${cleanQuery}</p>
+                                <p class="fw-bold text-dark mt-3">Response:</p>
+                                <p>${cleanResponse}</p>
+                                <p class="query-timestamp">${new Date(q.timestamp).toLocaleString()}</p>
+                            </div>
+                        `;
+                    }).join('');
+
+                    document.getElementById('query-history').innerHTML = history;
+                } catch (error) {
+                    document.getElementById('query-history').innerHTML = '<div class="alert alert-danger">Error fetching query history.</div>';
+                }
+            }
+
+            /**
+             * Displays a temporary notification.
+             * @param {string} message - The message to display.
+             * @param {string} type - The type of notification (success, error, info, warning).
+             */
+            function showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `alert alert-${type} position-fixed top-0 end-0 m-3`;
+                notification.style.zIndex = '1050';
+                notification.style.maxWidth = '300px';
+                notification.style.transition = 'opacity 0.5s ease';
+                notification.innerHTML = message;
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 500);
+                }, 3000);
+            }
+
+            // Initialize the app
+            updateStatus();
+            fetchQueryHistory();
+        });
+    </script>
+</body>
+</html>
